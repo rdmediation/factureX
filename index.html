@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Factur-X Generator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend+Deca:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Générateur Factur-X</h1>
+            <p>Créez ou extrayez des métadonnées Factur-X</p>
+        </header>
+
+        <nav class="tabs">
+            <button class="tab-btn active" data-tab="create">Créer Factur-X</button>
+            <button class="tab-btn" data-tab="extract">Extraire XML</button>
+        </nav>
+
+        <main>
+            <!-- TAB EXTRACTION -->
+            <div id="extractTab" class="tab-content" style="display: none;">
+                <button class="help-toggle" onclick="document.getElementById('helpExtract').style.display = document.getElementById('helpExtract').style.display === 'none' ? 'block' : 'none'">
+                    📖 Aide - Extraction et vérification
+                </button>
+
+                <div id="helpExtract" class="help-section" style="display: none;">
+                    <h3>Guide d'extraction et vérification</h3>
+                    <ul>
+                        <li><strong>Extraction XML :</strong> Uploadez une facture Factur-X pour visualiser et télécharger le XML embarqué</li>
+                        <li><strong>Données affichées :</strong> Numéro de facture, dates, vendeur, acheteur, montants (HT, TVA, TTC)</li>
+                        <li><strong>Vérification timestamp :</strong> Uploadez votre facture PDF + fichier .ots pour vérifier l'horodatage blockchain</li>
+                        <li><strong>Important :</strong> Les timestamps ne sont confirmés sur Bitcoin qu'après quelques heures</li>
+                        <li><strong>Sécurité :</strong> Toutes les opérations se font localement dans votre navigateur</li>
+                    </ul>
+                </div>
+
+                <section class="extract-section">
+                    <h2>Extraire le XML d'une facture Factur-X</h2>
+                    <p class="section-description">Uploadez une facture Factur-X pour en extraire et visualiser le XML embarqué</p>
+
+                    <div class="upload-area" id="extractUploadArea">
+                        <input type="file" id="extractPdfInput" accept=".pdf" hidden>
+                        <label for="extractPdfInput" class="upload-label">
+                            <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            <span>Cliquez pour choisir une facture Factur-X</span>
+                        </label>
+                    </div>
+                    <div id="extractFileInfo" class="file-info" style="display: none;">
+                        <p><strong>Fichier chargé :</strong> <span id="extractFileName"></span></p>
+                    </div>
+                </section>
+
+                <section class="xml-display-section" id="xmlDisplaySection" style="display: none;">
+                    <h2>Informations extraites</h2>
+
+                    <div class="xml-summary" id="xmlSummary">
+                        <div class="summary-grid">
+                            <div class="summary-item">
+                                <span class="summary-label">Numéro de facture</span>
+                                <span class="summary-value" id="extractInvoiceNumber">-</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Type de document</span>
+                                <span class="summary-value" id="extractDocType">-</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Date d'émission</span>
+                                <span class="summary-value" id="extractIssueDate">-</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Vendeur</span>
+                                <span class="summary-value" id="extractSeller">-</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Acheteur</span>
+                                <span class="summary-value" id="extractBuyer">-</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Devise</span>
+                                <span class="summary-value" id="extractCurrency">-</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Total HT</span>
+                                <span class="summary-value" id="extractTaxBasis">-</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Total TVA</span>
+                                <span class="summary-value" id="extractTax">-</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Total TTC</span>
+                                <span class="summary-value" id="extractGrandTotal">-</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Montant à payer</span>
+                                <span class="summary-value" id="extractDuePayable">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="xml-actions">
+                        <button id="downloadXmlBtn" class="btn btn-success">Télécharger le XML</button>
+                        <button id="viewXmlBtn" class="btn btn-secondary">Voir le XML brut</button>
+                    </div>
+
+                    <div id="xmlRawDisplay" class="xml-raw" style="display: none;">
+                        <h3>XML brut</h3>
+                        <pre id="xmlContent"></pre>
+                    </div>
+                </section>
+
+                <section class="ots-verify-section">
+                    <h2>Vérifier un timestamp blockchain (.ots)</h2>
+                    <p class="section-description">Vérifiez l'authenticité et l'horodatage d'une facture avec son fichier .ots</p>
+
+                    <div class="ots-upload-area">
+                        <div class="upload-group">
+                            <label>Facture PDF</label>
+                            <input type="file" id="verifyPdfInput" accept=".pdf">
+                        </div>
+                        <div class="upload-group">
+                            <label>Fichier timestamp (.ots)</label>
+                            <input type="file" id="verifyOtsInput" accept=".ots">
+                        </div>
+                        <button id="verifyOtsBtn" class="btn btn-primary" disabled>Vérifier le timestamp</button>
+                    </div>
+
+                    <div id="otsVerifyResult" style="display: none;" class="ots-verify-result">
+                        <div id="otsVerifySuccess" class="ots-status success" style="display: none;">
+                            <h3>✓ Timestamp valide</h3>
+                            <div class="verify-details">
+                                <p><strong>Date de création :</strong> <span id="otsTimestamp"></span></p>
+                                <p><strong>Hash du fichier :</strong> <span id="otsFileHash"></span></p>
+                                <p><strong>Bloc Bitcoin :</strong> <span id="otsBitcoinBlock"></span></p>
+                            </div>
+                        </div>
+
+                        <div id="otsVerifyPending" class="ots-status warning" style="display: none;">
+                            <h3>⏳ Timestamp en attente</h3>
+                            <p class="ots-info">Le timestamp n'est pas encore confirmé sur la blockchain. Réessayez dans quelques heures.</p>
+                        </div>
+
+                        <div id="otsVerifyError" class="ots-status error" style="display: none;">
+                            <h3>✗ Erreur de vérification</h3>
+                            <p class="ots-info" id="otsVerifyErrorMsg"></p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- TAB CREATION -->
+            <div id="createTab" class="tab-content">
+                <button class="help-toggle" onclick="document.getElementById('helpCreate').style.display = document.getElementById('helpCreate').style.display === 'none' ? 'block' : 'none'">
+                    📖 Aide - Comment créer une facture Factur-X
+                </button>
+
+                <div id="helpCreate" class="help-section" style="display: none;">
+                    <h3>Guide de création Factur-X</h3>
+                    <ul>
+                        <li><strong>Étape 1 :</strong> Uploadez votre facture PDF existante</li>
+                        <li><strong>Étape 2 :</strong> Remplissez les informations requises (détection automatique pour les factures Dolibarr)</li>
+                        <li><strong>Étape 3 :</strong> Générez votre facture Factur-X avec XML embarqué</li>
+                        <li><strong>Timestamping :</strong> Après génération, vous pouvez créer un fichier .ots pour certifier la date de création sur la blockchain Bitcoin</li>
+                        <li><strong>Format :</strong> Conforme au profil MINIMUM de la norme Factur-X 1.0</li>
+                    </ul>
+                </div>
+
+                <section class="upload-section">
+                <h2>1. Chargez votre facture PDF</h2>
+                <div class="upload-area" id="uploadArea">
+                    <input type="file" id="pdfInput" accept=".pdf" hidden>
+                    <label for="pdfInput" class="upload-label">
+                        <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        <span>Cliquez pour choisir un fichier PDF</span>
+                    </label>
+                </div>
+                <div id="fileInfo" class="file-info" style="display: none;">
+                    <p><strong>Fichier chargé :</strong> <span id="fileName"></span></p>
+                </div>
+            </section>
+
+            <section class="form-section" id="formSection" style="display: none;">
+                <h2>2. Renseignez les informations de la facture</h2>
+                <form id="factureForm">
+                    <div class="form-group">
+                        <label for="invoiceNumber">Numéro de facture *</label>
+                        <input type="text" id="invoiceNumber" name="invoiceNumber" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="documentType">Type de document *</label>
+                        <select id="documentType" name="documentType" required>
+                            <option value="380">380 - Facture</option>
+                            <option value="381">381 - Avoir</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="issueDate">Date d'émission *</label>
+                        <input type="date" id="issueDate" name="issueDate" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="sellerName">Nom du vendeur *</label>
+                        <input type="text" id="sellerName" name="sellerName" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="buyerName">Nom de l'acheteur *</label>
+                        <input type="text" id="buyerName" name="buyerName" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="currency">Devise *</label>
+                        <select id="currency" name="currency" required>
+                            <option value="EUR">EUR - Euro</option>
+                            <option value="USD">USD - Dollar US</option>
+                            <option value="GBP">GBP - Livre Sterling</option>
+                            <option value="CHF">CHF - Franc Suisse</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="taxBasisTotal">Montant total HT *</label>
+                        <input type="number" id="taxBasisTotal" name="taxBasisTotal" step="0.01" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="taxTotal">Montant total TVA *</label>
+                        <input type="number" id="taxTotal" name="taxTotal" step="0.01" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="grandTotal">Montant total TTC *</label>
+                        <input type="number" id="grandTotal" name="grandTotal" step="0.01" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="duePayable">Montant à payer *</label>
+                        <input type="number" id="duePayable" name="duePayable" step="0.01" required>
+                    </div>
+
+                    <div class="button-group">
+                        <button type="submit" class="btn btn-primary">Générer Factur-X</button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="result-section" id="resultSection" style="display: none;">
+                <h2>3. Téléchargez votre facture Factur-X</h2>
+                <div class="result-content">
+                    <p>Votre facture PDF avec les métadonnées Factur-X a été générée avec succès !</p>
+                    <button id="downloadBtn" class="btn btn-success">Télécharger la facture Factur-X</button>
+                    <button id="resetBtn" class="btn btn-secondary">Nouvelle facture</button>
+                </div>
+
+                <div class="ots-section">
+                    <h3>Timestamping Blockchain (OpenTimestamps)</h3>
+                    <p class="section-description">Certifiez l'horodatage de votre facture sur la blockchain Bitcoin de manière décentralisée et gratuite.</p>
+
+                    <div id="otsNotGenerated" class="ots-generate">
+                        <button id="generateOtsBtn" class="btn btn-primary">Générer le timestamp blockchain (.ots)</button>
+                    </div>
+
+                    <div id="otsGenerating" style="display: none;" class="ots-status">
+                        <p>⏳ Génération du timestamp en cours...</p>
+                        <p class="ots-info">Cela peut prendre quelques secondes.</p>
+                    </div>
+
+                    <div id="otsGenerated" style="display: none;" class="ots-status">
+                        <p>✓ Timestamp blockchain généré avec succès !</p>
+                        <p class="ots-info">Le fichier .ots contient la preuve d'existence de votre facture à cet instant précis.</p>
+                        <button id="downloadOtsBtn" class="btn btn-success">Télécharger le fichier .ots</button>
+                    </div>
+
+                    <div id="otsError" style="display: none;" class="ots-status error">
+                        <p>✗ Erreur lors de la génération du timestamp</p>
+                        <p class="ots-info" id="otsErrorMsg"></p>
+                        <button id="retryOtsBtn" class="btn btn-secondary">Réessayer</button>
+                    </div>
+                </div>
+            </section>
+            </div>
+            <!-- END TAB CREATION -->
+        </main>
+
+        <footer>
+            <p>Profil Factur-X : MINIMUM</p>
+        </footer>
+    </div>
+
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://unpkg.com/pako@2.1.0/dist/pako.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="opentimestamps.min.js"></script>
+    <script>
+        // Configuration de pdf.js
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        // Vérifier que OpenTimestamps est chargé
+        console.log('=== VÉRIFICATION DES BIBLIOTHÈQUES ===');
+        console.log('pdf-lib:', typeof PDFLib !== 'undefined');
+        console.log('pako:', typeof pako !== 'undefined');
+        console.log('pdfjsLib:', typeof pdfjsLib !== 'undefined');
+        console.log('OpenTimestamps:', typeof OpenTimestamps !== 'undefined');
+
+        window.addEventListener('load', () => {
+            console.log('\n=== APRÈS CHARGEMENT COMPLET ===');
+            console.log('OpenTimestamps chargé:', typeof OpenTimestamps !== 'undefined');
+            if (typeof OpenTimestamps !== 'undefined') {
+                console.log('OpenTimestamps.DetachedTimestampFile:', typeof OpenTimestamps.DetachedTimestampFile);
+                console.log('OpenTimestamps.stamp:', typeof OpenTimestamps.stamp);
+                console.log('OpenTimestamps.verify:', typeof OpenTimestamps.verify);
+            } else {
+                console.error('❌ OpenTimestamps n\'est pas chargé !');
+            }
+        });
+    </script>
+    <script src="app.js"></script>
+</body>
+</html>
