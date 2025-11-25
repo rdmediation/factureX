@@ -4,9 +4,7 @@ Application web complète pour créer et extraire des métadonnées Factur-X (pr
 
 Accès à l'application : 
 
-[https://rdmediation.github.io/factureX/]: https://rdmediation.github.io/factureX/
-
-
+[FacturX](https://rdmediation.github.io/factureX/)
 
 ## Description
 
