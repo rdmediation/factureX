@@ -2,13 +2,21 @@
 
 Application web complète pour créer et extraire des métadonnées Factur-X (profil MINIMUM) dans vos factures PDF.
 
+Accès à l'application : 
+
+[https://rdmediation.github.io/factureX/]: https://rdmediation.github.io/factureX/
+
+
+
 ## Description
+
+L'application fonctionne entièrement localement. Aucune donnée n'est remontée sur le serveur.
 
 Cette application permet de :
 
 ### Mode Création
 1. Uploader une facture au format PDF
-2. Remplir un formulaire avec les informations minimales requises par Factur-X
+2. Remplir un formulaire avec les informations minimales requises par Factur-X (automatique avec les facture de Dolibarr)
 3. Générer automatiquement le fichier XML conforme au profil MINIMUM
 4. Embarquer ce XML dans le PDF original
 5. Télécharger la facture PDF enrichie au format Factur-X
